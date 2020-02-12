@@ -2,9 +2,9 @@
   "name": "elo-rating",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/elo.service.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha src/*.spec.js"
   },
   "keywords": [],
   "author": "",
