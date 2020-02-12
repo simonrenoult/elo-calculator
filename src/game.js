@@ -7,10 +7,11 @@ module.exports = class Game {
 
   finish(winner) {
     this.players.forEach((player) => {
+      const opponents = this.getOpponents(player);
       if (this.hasWon(winner, player)) {
-        player.wins(this.getOpponents(player));
+        player.wins(opponents);
       } else {
-        player.looses(this.getOpponents(player));
+        player.looses(opponents);
       }
     });
   }
