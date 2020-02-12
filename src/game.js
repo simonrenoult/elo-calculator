@@ -1,4 +1,3 @@
-
 module.exports = class Game {
   constructor(players) {
     this.checkPlayersNameAreUnique(players);
