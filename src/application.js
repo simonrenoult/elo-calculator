@@ -1,68 +1,91 @@
-const express = require('express')
-const joi = require('@hapi/joi')
-const Player = require('./player')
-const Game = require('./game')
-const app = express()
+const express = require('express');
+const joi = require('@hapi/joi');
+const Redis = require('ioredis');
+const Player = require('./player');
+const Game = require('./game');
 
-app.use(express.json())
+const REDIS_URL = process.env.REDIS_RUL || 'redis://127.0.0.1:6379';
+const redis = new Redis(REDIS_URL);
+const app = express();
 
-// repositories
+app.use(express.json());
 
-const eloPerPlayerRepository = {}
-const gameRepository = []
+redis
+  .on('error', (error) => {
+    console.error(error);
+  })
+  .on('connect', () => {
+    console.log(`Server is connected to redis at ${REDIS_URL}`);
+  });
 
 // schemas
 
-const playerNameSchema = joi.string()
-const playerWonSchema = joi.boolean()
+const playerNameSchema = joi.string();
+const playerWonSchema = joi.boolean();
 const gameCreationSchema = joi.array()
   .items({ name: playerNameSchema, won: playerWonSchema })
   .has({ name: playerNameSchema, won: playerWonSchema.valid(true) })
+  .min(2)
+  .required();
 
 // routes
 
-app.post('/games', (req, res) => {
-  let gameCreationCommand
+app.post('/games', async (req, res) => {
+  let gameCreationCommand;
   try {
-    gameCreationCommand = joi.attempt(req.body, gameCreationSchema)
+    gameCreationCommand = joi.attempt(req.body, gameCreationSchema);
   } catch (e) {
-    res.status(400).send(e.message)
-    return
+    res.status(400).send(e.message);
+    return;
   }
 
-  createGame(gameCreationCommand)
+  const rawEloPerPlayer = await redis.get('eloPerPlayer');
+  const eloPerPlayer = JSON.parse(rawEloPerPlayer) || {};
 
-  res.status(204).send()
-})
+  const rawGames = await redis.get('games');
+  const games = JSON.parse(rawGames) || [];
 
-app.get('/ladder', (req, res) => {
-  const ladder = Object.keys(eloPerPlayerRepository)
-    .map(toPlayer)
-    .sort(highestEloFirst)
+  const game = createGame(gameCreationCommand, eloPerPlayer, games);
+  games.push(game);
+  redis.set('games', JSON.stringify(games));
 
-  res.status(200).send(ladder)
-})
+  game.players.forEach((player) => {
+    eloPerPlayer[player.name] = player.elo;
+  });
+  redis.set('eloPerPlayer', JSON.stringify(eloPerPlayer));
+
+  res.status(204).send();
+});
+
+app.get('/ladder', async (req, res) => {
+  const rawEloPerPlayer = await redis.get('eloPerPlayer');
+
+  const eloPerPlayer = JSON.parse(rawEloPerPlayer) || {};
+  const ladder = Object.keys(eloPerPlayer)
+    .map(toPlayer(eloPerPlayer))
+    .sort(highestEloFirst);
+
+  res.status(200).send(ladder);
+});
 
 // usecases
 
+function createGame(command, eloPerPlayer) {
+  const itemThatWon = command.find(hasWon);
+  const players = command.map((item) => toPlayer(eloPerPlayer)(item.name));
+  const game = new Game(players);
 
-function createGame (command) {
-  const itemThatWon = command.find(hasWon)
-  const players = command.map(item => toPlayer(item.name))
-  const game = new Game(players)
+  const playerWhoWon = players.find(nameMatches(itemThatWon));
+  game.finish(playerWhoWon);
 
-  const playerWhoWon = players.find(nameMatches(itemThatWon))
-  game.finish(playerWhoWon)
-
-  gameRepository.push(game)
-  game.players.forEach(player => eloPerPlayerRepository[player.name] = player.elo)
+  return game;
 }
 
 // utils
 
-const toPlayer = (playerName) => new Player(playerName, eloPerPlayerRepository[playerName])
-const highestEloFirst = (a, b) => b.elo - a.elo
-const hasWon = (player) => player.won === true
-const nameMatches = (itemThatWon) => (player) => player.name === itemThatWon.name
+const toPlayer = (eloPerPlayer) => (playerName) => new Player(playerName, eloPerPlayer[playerName]);
+const highestEloFirst = (a, b) => b.elo - a.elo;
+const hasWon = (player) => player.won === true;
+const nameMatches = (itemThatWon) => (player) => player.name === itemThatWon.name;
 
-module.exports = app
+module.exports = app;
