@@ -37,7 +37,7 @@ export default class Game {
     const game = new Game(players, winner);
 
     await gameRepository.add(game);
-    domainEventEmitter.emit('GameCreated');
+    domainEventEmitter.emit('GameCreated', game);
   }
 
   constructor(

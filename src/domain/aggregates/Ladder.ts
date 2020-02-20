@@ -1,10 +1,8 @@
-import GameRepository from '../repositories/GameRepository';
 import Player from '../entities/Player';
 import Game from './Game';
 import { Name } from '../value-objects/ValueObjects';
 
-interface LadderRepository {
-  get(): Promise<Ladder>;
+export interface LadderRepository {
   setEloOf(players: Player[]): Promise<void>;
 }
 
@@ -23,13 +21,13 @@ export default class Ladder {
         player.looses(opponents);
       }
       return player;
-    })
+    });
 
-    await ladderRepository.setEloOf(playersWithNewElo)
+    await ladderRepository.setEloOf(playersWithNewElo);
   }
 
   private static getOpponents(players: Player[], player: Player) {
-    return players.filter(p => p.name !== player.name)
+    return players.filter(p => p.name !== player.name);
   }
 
   constructor(public readonly players: Map<Name, Player>) {
