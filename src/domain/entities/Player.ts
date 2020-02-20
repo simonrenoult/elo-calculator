@@ -1,12 +1,12 @@
+import { Elo, Name, NO_ELO } from '../value-objects/ValueObjects';
 const { computeElo, DEFAULT_ELO } = require('./elo.service');
 
+export default class Player {
 
-module.exports = class Player {
-  constructor(name, elo) {
-    if (!name) {
-      throw new Error('A name must be provided');
-    }
+  readonly name: Name;
+  elo: Elo;
 
+  constructor(name: Name, elo: Elo | NO_ELO) {
     this.name = name;
     this.elo = elo || DEFAULT_ELO;
   }
@@ -18,8 +18,9 @@ module.exports = class Player {
   looses(opponents) {
     this.elo = computeElo(this.elo, false, eloOnly(opponents));
   }
-};
+}
 
 function eloOnly(players) {
   return players.map((opponent) => opponent.elo);
 }
+

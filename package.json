@@ -2,7 +2,7 @@
   "name": "elo-rating",
   "version": "1.0.0",
   "description": "",
-  "main": "src/elo.service.js",
+  "main": "src/domain/services/elo.service.js",
   "scripts": {
     "start": "bin/start",
     "test": "mocha src/*.spec.js",
@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^13.7.4",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
@@ -22,6 +23,7 @@
   "dependencies": {
     "@hapi/joi": "^17.1.0",
     "express": "^4.17.1",
-    "ioredis": "^4.14.1"
+    "ioredis": "^4.14.1",
+    "is": "^3.3.0"
   }
 }
