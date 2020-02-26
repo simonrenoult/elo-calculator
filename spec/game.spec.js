@@ -1,7 +1,7 @@
 const { describe, it } = require('mocha');
 const { expect } = require('chai');
-const Player = require('./player');
-const Game = require('./game');
+const Player = require('../src/domain/player');
+const Game = require('../src/domain/game');
 
 describe('Game', () => {
   it('sets the appropriate value when a player has won', () => {

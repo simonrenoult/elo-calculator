@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { createServer } = require('http')
-const application = require('../src/application')
+const application = require('../src/infra/api')
 const PORT = process.env.PORT || 1337
 
 const server = createServer(application)
