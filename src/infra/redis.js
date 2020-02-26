@@ -12,4 +12,31 @@ redis
     console.log(`Server is connected to redis at ${REDIS_URL}`);
   });
 
-module.exports = redis;
+const ELO_PER_PLAYER = 'eloPerPlayer'
+const GAMES = 'games'
+
+async function getEloPerPlayer() {
+  const rawEloPerPlayer = await redis.get(ELO_PER_PLAYER)
+  return JSON.parse(rawEloPerPlayer) || {}
+}
+
+async function getGames() {
+  const rawGames = await redis.get(GAMES)
+  return JSON.parse(rawGames) || []
+}
+
+async function addGame(game) {
+  const games = await getGames()
+  games.push(game)
+  await redis.set(GAMES, JSON.stringify(games))
+}
+
+async function updatePlayerElo(game) {
+  const eloPerPlayer = await getEloPerPlayer()
+  game.players.forEach(player => {
+    eloPerPlayer[player.name] = player.elo
+  })
+  await redis.set(ELO_PER_PLAYER, JSON.stringify(eloPerPlayer))
+}
+
+module.exports = { getEloPerPlayer, getGames, addGame, updatePlayerElo };

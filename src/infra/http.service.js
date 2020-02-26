@@ -2,7 +2,7 @@ const joi = require('@hapi/joi');
 const Player = require('../domain/player');
 const Game = require('../domain/game');
 const { gameCreationSchema } = require('./api.schema')
-const redis = require('./redis')
+const { getEloPerPlayer, addGame, updatePlayerElo } = require('./redis')
 
 module.exports = { createGame, showLadder, logRequest }
 
@@ -12,12 +12,10 @@ function logRequest (req, res, next) {
 }
 
 async function showLadder(req, res) {
-  const rawEloPerPlayer = await redis.get('eloPerPlayer')
-
-  const eloPerPlayer = JSON.parse(rawEloPerPlayer) || {}
+  const eloPerPlayer = await getEloPerPlayer()
   const ladder = Object.keys(eloPerPlayer)
-    .map(toPlayer(eloPerPlayer))
-    .sort(highestEloFirst)
+    .map((playerName) => new Player(playerName, eloPerPlayer[playerName]))
+    .sort((a, b) => b.elo - a.elo)
 
   res.status(200).send(ladder)
 }
@@ -31,30 +29,23 @@ async function createGame(req, res) {
     return
   }
 
-  const rawEloPerPlayer = await redis.get('eloPerPlayer')
-  const eloPerPlayer = JSON.parse(rawEloPerPlayer) || {}
+  const eloPerPlayer = await getEloPerPlayer()
 
-  const rawGames = await redis.get('games')
-  const games = JSON.parse(rawGames) || []
-
-  const itemThatWon = gameCreationCommand.find(hasWon)
-  const players = gameCreationCommand.map((item) => toPlayer(eloPerPlayer)(item.name))
+  const itemThatWon = gameCreationCommand.find((player) => player.won === true)
+  const players = gameCreationCommand.map((item) => new Player(item.name, eloPerPlayer[item.name]))
   const game = new Game(players)
+  const winningPlayer = players.find((player) => player.name === itemThatWon.name)
+  game.finish(winningPlayer)
 
-  const playerWhoWon = players.find(nameMatches(itemThatWon))
-  game.finish(playerWhoWon)
-
-  games.push(game)
-  redis.set('games', JSON.stringify(games))
-
-  game.players.forEach((player) => eloPerPlayer[player.name] = player.elo)
-  redis.set('eloPerPlayer', JSON.stringify(eloPerPlayer))
+  await addGame(game)
+  await updatePlayerElo(game)
 
   res.status(204).send()
 }
 
 
-const toPlayer = (eloPerPlayer) => (playerName) => new Player(playerName, eloPerPlayer[playerName]);
-const highestEloFirst = (a, b) => b.elo - a.elo;
-const hasWon = (player) => player.won === true;
-const nameMatches = (itemThatWon) => (player) => player.name === itemThatWon.name;
+
+
+
+
+
