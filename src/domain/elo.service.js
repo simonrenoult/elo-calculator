@@ -5,7 +5,7 @@ module.exports = { computeElo, DEFAULT_ELO };
 
 function computeElo(playerElo, playerHasWon, opponentsElo) {
   const probabilityToWin = computeProbabilityToWinAgainstMany(playerElo, opponentsElo);
-  return playerElo + K * ((playerHasWon ? 1 : 0) - probabilityToWin);
+  return Math.round(playerElo + K * ((playerHasWon ? 1 : 0) - probabilityToWin));
 }
 
 function computeProbabilityToWinAgainstMany(playerElo, opponentsElo) {

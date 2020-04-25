@@ -69,6 +69,7 @@ conf/development.js
 # ide
 .vscode/
 .idea/
+*.iml
 
 # developer notes
 NOTES.md

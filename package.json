@@ -2,18 +2,30 @@
   "name": "elo-rating",
   "version": "1.0.0",
   "description": "",
-  "main": "src/elo.service.js",
+  "main": "src/domain/elo.service.js",
   "scripts": {
-    "test": "mocha src/*.spec.js"
+    "start": "bin/start",
+    "test": "mocha src/*.spec.js",
+    "start:redis": "docker-compose up",
+    "watch:api": "nodemon bin/start",
+    "watch": "concurrently -n api,redis npm:watch:api npm:start:redis"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "chai": "^4.2.0",
+    "concurrently": "^5.1.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.20.1",
-    "mocha": "^7.0.1"
+    "mocha": "^7.0.1",
+    "nodemon": "^2.0.2"
+  },
+  "dependencies": {
+    "@hapi/joi": "^17.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "ioredis": "^4.14.1"
   }
 }
